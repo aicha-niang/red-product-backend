@@ -1,10 +1,11 @@
 const express = require('express');
 const multer = require('multer');
-const path = require('path'); // <== Important
+const path = require('path');
 const Hotel = require('../models/hotel');
 
 const router = express.Router();
 
+// ✅ Configuration du stockage multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'uploads/');
@@ -13,19 +14,40 @@ const storage = multer.diskStorage({
     cb(null, Date.now() + path.extname(file.originalname));
   }
 });
-
 const upload = multer({ storage });
-router.delete('/:id', async (req, res) => {
+
+// ✅ Ajouter un hôtel avec image
+router.post('/', upload.single('image'), async (req, res) => {
   try {
-    await Hotel.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Hôtel supprimé avec succès' });
+    const { name, location, price, description } = req.body;
+
+    const newHotel = new Hotel({
+      name,
+      location,
+      price,
+      description,
+      image: req.file ? req.file.filename : ''
+    });
+
+    const savedHotel = await newHotel.save();
+    res.status(201).json(savedHotel);
   } catch (err) {
-    res.status(500).json({ message: 'Erreur serveur', error: err.message });
+    console.error('Erreur lors de la création de l’hôtel :', err);
+    res.status(400).json({ message: 'Erreur lors de l’enregistrement de l’hôtel' });
   }
 });
 
+// ✅ Récupérer tous les hôtels
+router.get('/', async (req, res) => {
+  try {
+    const hotels = await Hotel.find();
+    res.json(hotels);
+  } catch (err) {
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+});
 
-// Supprimer tous les hôtels (à utiliser temporairement)
+// ✅ Supprimer un hôtel par ID
 router.delete('/:id', async (req, res) => {
   try {
     const hotel = await Hotel.findByIdAndDelete(req.params.id);
@@ -38,44 +60,7 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-
-// recuperer tous les hôtels (à utiliser temporairement)
-router.get('/', async (req, res) => {
-  try {
-    const hotels = await Hotel.find();
-    res.json(hotels);
-  } catch (err) {
-    res.status(400).send('Error fetching hotels');
-  }
-});
-
-// ✅ POST avec upload d'image
-router.post('/', upload.single('image'), async (req, res) => {
-  const { name, location, price, description } = req.body;
-
-  let image = '';
-  if (req.file) {
-    image = req.file.filename;
-  }
-
-  const newHotel = new Hotel({
-    name,
-    location,
-    price,
-    description,
-    image
-  });
-
-  try {
-    const savedHotel = await newHotel.save();
-    res.status(201).json(savedHotel);
-  } catch (err) {
-    console.error(err);
-    res.status(400).send('Error saving hotel');
-  }
-});
-
-// GET /hotels/count
+// ✅ Nombre total d’hôtels
 router.get('/count', async (req, res) => {
   try {
     const count = await Hotel.countDocuments();
@@ -84,6 +69,5 @@ router.get('/count', async (req, res) => {
     res.status(500).json({ message: 'Erreur serveur' });
   }
 });
-
 
 module.exports = router;
