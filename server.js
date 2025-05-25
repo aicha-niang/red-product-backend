@@ -12,7 +12,7 @@ const app = express();
 // ✅ Autoriser plusieurs origines (local + frontend Render)
 const allowedOrigins = [
   'http://localhost:3000',
-  'https://red-product-backend-eex7.onrender.com' // ← Remplace par ton vrai domaine Render
+  'https://red-product-frontend-rpp0.onrender.com' // ← Remplace par ton vrai domaine Render
 ];
 
 app.use(cors({
