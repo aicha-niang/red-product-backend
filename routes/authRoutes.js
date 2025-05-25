@@ -41,13 +41,22 @@ router.post('/login', async (req, res) => {
 
     const token = jwt.sign({ id: admin._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
     console.log('Connexion réussie');
-    res.json({ token });
-  } catch (err) {
-  console.error(err);              // Affiche l’erreur dans la console
-  res.status(500).json({ message: 'Erreur serveur', error: err.message });
-}
 
+    res
+      .cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'Lax',
+        maxAge: 24 * 60 * 60 * 1000,
+      })
+      .json({ message: 'Connexion réussie' });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Erreur serveur', error: err.message });
+  }
 });
+
 // ✅ Obtenir les infos de l'utilisateur connecté (grâce au token dans le cookie)
 router.get('/me', async (req, res) => {
   const token = req.cookies.token; // nécessite cookie-parser
